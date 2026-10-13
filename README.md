@@ -9,7 +9,7 @@ Version 1.0 — a Node.js and React web application for discovering responsive d
 - Ping-sweep the remaining addresses in the subnet.
 - Show IP, reverse hostname, MAC, IEEE manufacturer, ping latency, TTL, heuristic OS estimate, mDNS name, NetBIOS name, and configured TCP port status.
 - Add any number of unique TCP ports and optional column names.
-- Save interface, timeout, ports, language, and English/Russian translations in config/settings.json.
+- Save interface, timeout, ports, language, theme, and English/Russian translations in config/settings.json. Toggle light/dark theme in the header.
 - System language is the default. Progress is split into 0–50% ARP discovery and 50–100% subnet sweep.
 - About: IP Neighbors, version 1.0, author chatgpt.com.
 
@@ -20,7 +20,7 @@ Debian 13 or similar, Node.js 20+, npm, iproute2, and iputils-ping. Optional pac
     sudo apt update
     sudo apt install iproute2 iputils-ping arp-scan avahi-utils samba-common-bin
 
-The IEEE OUI vendor database is downloaded once from the IEEE public endpoint and cached as config/oui.txt. If unavailable, scanning continues without vendor names. mDNS uses avahi-resolve-address; NetBIOS uses nmblookup.
+The IEEE OUI vendor database is downloaded once from the IEEE public endpoint and cached per user at ~/.cache/ip-neighbors/oui.txt. The cache parser recognizes IEEE's hyphenated OUI prefixes. If unavailable, scanning continues without vendor names. mDNS uses avahi-resolve-address; NetBIOS uses nmblookup.
 
 ## Install
 

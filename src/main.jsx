@@ -3,6 +3,7 @@ import{createRoot}from"react-dom/client";
 import"./style.css";
 function App(){
  const [cfg,S]=useState(null),[ifs,I]=useState([]),[rows,R]=useState([]),[pct,P]=useState(0),[stage,G]=useState(""),[busy,B]=useState(false),[about,A]=useState(false),[err,E]=useState("");
+ useEffect(()=>{if(cfg)document.documentElement.dataset.theme=cfg.theme==="light"?"light":"dark"},[cfg?.theme]);
  useEffect(()=>{Promise.all([fetch("/api/settings").then(r=>r.json()),fetch("/api/interfaces").then(r=>r.json())]).then(([s,n])=>{S(s);I(n.interfaces||[]) }).catch(e=>E(e.message))},[]);
  const lang=cfg?.language==="ru"||cfg?.language==="en"?cfg.language:((navigator.language||"en").toLowerCase().startsWith("ru")?"ru":"en");
  const t=k=>cfg?.translations?.[lang]?.[k]||k;
@@ -11,7 +12,7 @@ function App(){
  async function save(){let r=await fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(cfg)}),d=await r.json();if(!r.ok)throw Error(d.error);S(d.settings)}
  async function scan(){try{E("");await save();R([]);P(0);let r=await fetch("/api/scan",{method:"POST"}),d=await r.json();if(!r.ok)throw Error(d.error);B(true);let es=new EventSource("/api/scan/events");es.onmessage=e=>{let x=JSON.parse(e.data);if(x.type==="progress"){P(x.percent);G(x.stage)}if(x.type==="device")R(old=>{let a=old.filter(v=>v.ip!==x.device.ip);return [...a,x.device].sort((u,v)=>u.ip.localeCompare(v.ip,undefined,{numeric:true}))});if(x.type==="done"){B(false);P(100);G(t("done"));es.close()}if(x.type==="error"){E(x.message);B(false);es.close()}};es.onerror=()=>{} }catch(e){E(e.message);B(false)}}
  if(!cfg)return <main>IP Neighbors…</main>;
- return <main><header><div><h1>{t("title")}</h1><p>{t("subtitle")}</p></div><button className="alt" onClick={()=>A(true)}>{t("about")}</button></header>
+ return <main><header><div><h1>{t("title")}</h1><p>{t("subtitle")}</p></div><div className="header-actions"><button className="alt theme-toggle" onClick={()=>{const theme=(cfg.theme||"dark")==="dark"?"light":"dark";set("theme",theme);fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({...cfg,theme})}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error);S(d.settings)}).catch(e=>E(e.message))}}>{(cfg.theme||"dark")==="dark"?"☀ "+t("lightTheme"):"☾ "+t("darkTheme")}</button><button className="alt" onClick={()=>A(true)}>{t("about")}</button></div></header>
  <section className="panel settings"><div className="field wide"><label>{t("interface")}</label><div className="inline"><select value={cfg.interface} onChange={e=>set("interface",e.target.value)}><option value="">—</option>{ifs.map(n=><option key={n.name} value={n.name}>{n.name} · {n.cidr}</option>)}</select><button className="alt" onClick={()=>fetch("/api/interfaces").then(r=>r.json()).then(n=>I(n.interfaces||[]))}>↻</button></div><small>{t("interfaceHint")}</small></div>
  <div className="field"><label>{t("timeout")}</label><input type="number" min="100" max="10000" step="100" value={cfg.timeoutMs} onChange={e=>set("timeoutMs",+e.target.value)}/></div>
  <div className="field"><label>{t("language")}</label><select value={cfg.language} onChange={e=>set("language",e.target.value)}><option value="system">{t("system")}</option><option value="en">{t("english")}</option><option value="ru">{t("russian")}</option></select></div>
