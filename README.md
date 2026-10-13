@@ -38,6 +38,6 @@ For UI development, run npm start and npm run dev in separate terminals. Vite li
 
 - Only devices replying to ping are displayed. Firewalls may block ping even when a device is online.
 - OS is estimated from TTL and is not definitive identification.
-- The app supports IPv4 prefixes /16 through /30. Ping timeout is 100–10000 ms.
+- The app supports IPv4 prefixes /16 through /30. Ping timeout is 100–10000 ms. Port entries are limited by practical browser, JSON request, and operating-system resources rather than an application-level port-count setting.
 - ARP scanning may require root or suitable arp-scan capabilities.
 - MAC randomization and unassigned IEEE prefixes may have no manufacturer result.
