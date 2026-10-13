@@ -1,0 +1,26 @@
+import React,{useEffect,useState} from "react";
+import{createRoot}from"react-dom/client";
+import"./style.css";
+function App(){
+ const [cfg,S]=useState(null),[ifs,I]=useState([]),[rows,R]=useState([]),[pct,P]=useState(0),[stage,G]=useState(""),[busy,B]=useState(false),[about,A]=useState(false),[err,E]=useState("");
+ useEffect(()=>{Promise.all([fetch("/api/settings").then(r=>r.json()),fetch("/api/interfaces").then(r=>r.json())]).then(([s,n])=>{S(s);I(n.interfaces||[]) }).catch(e=>E(e.message))},[]);
+ const lang=cfg?.language==="ru"||cfg?.language==="en"?cfg.language:((navigator.language||"en").toLowerCase().startsWith("ru")?"ru":"en");
+ const t=k=>cfg?.translations?.[lang]?.[k]||k;
+ const set=(k,v)=>S(o=>({...o,[k]:v}));
+ const port=(i,k,v)=>S(o=>({...o,ports:o.ports.map((p,n)=>n===i?{...p,[k]:v}:p)}));
+ async function save(){let r=await fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(cfg)}),d=await r.json();if(!r.ok)throw Error(d.error);S(d.settings)}
+ async function scan(){try{E("");await save();R([]);P(0);let r=await fetch("/api/scan",{method:"POST"}),d=await r.json();if(!r.ok)throw Error(d.error);B(true);let es=new EventSource("/api/scan/events");es.onmessage=e=>{let x=JSON.parse(e.data);if(x.type==="progress"){P(x.percent);G(x.stage)}if(x.type==="device")R(old=>{let a=old.filter(v=>v.ip!==x.device.ip);return [...a,x.device].sort((u,v)=>u.ip.localeCompare(v.ip,undefined,{numeric:true}))});if(x.type==="done"){B(false);P(100);G(t("done"));es.close()}if(x.type==="error"){E(x.message);B(false);es.close()}};es.onerror=()=>{} }catch(e){E(e.message);B(false)}}
+ if(!cfg)return <main>IP Neighbors…</main>;
+ return <main><header><div><h1>{t("title")}</h1><p>{t("subtitle")}</p></div><button className="alt" onClick={()=>A(true)}>{t("about")}</button></header>
+ <section className="panel settings"><div className="field wide"><label>{t("interface")}</label><div className="inline"><select value={cfg.interface} onChange={e=>set("interface",e.target.value)}><option value="">—</option>{ifs.map(n=><option key={n.name} value={n.name}>{n.name} · {n.cidr}</option>)}</select><button className="alt" onClick={()=>fetch("/api/interfaces").then(r=>r.json()).then(n=>I(n.interfaces||[]))}>↻</button></div><small>{t("interfaceHint")}</small></div>
+ <div className="field"><label>{t("timeout")}</label><input type="number" min="100" max="10000" step="100" value={cfg.timeoutMs} onChange={e=>set("timeoutMs",+e.target.value)}/></div>
+ <div className="field"><label>{t("language")}</label><select value={cfg.language} onChange={e=>set("language",e.target.value)}><option value="system">{t("system")}</option><option value="en">{t("english")}</option><option value="ru">{t("russian")}</option></select></div>
+ <div className="ports wide"><div className="heading"><label>{t("ports")}</label><button className="alt" onClick={()=>set("ports",[...cfg.ports,{port:443,name:""}])}>＋ {t("addPort")}</button></div>{cfg.ports.map((p,i)=><div className="port" key={i}><input aria-label="Port" type="number" min="1" max="65535" value={p.port} onChange={e=>port(i,"port",+e.target.value)}/><input aria-label={t("portName")} placeholder={t("portName")} value={p.name} onChange={e=>port(i,"name",e.target.value)}/><button className="alt" onClick={()=>set("ports",cfg.ports.filter((_,j)=>j!==i))}>×</button></div>)}<small>{t("portHint")}</small></div>
+ <div className="actions wide"><button disabled={busy||!cfg.interface} onClick={scan}>{t("scan")}</button><button className="alt" onClick={()=>save().catch(e=>E(e.message))}>{t("save")}</button>{busy&&<button className="stop" onClick={()=>fetch("/api/scan/stop",{method:"POST"})}>{t("stop")}</button>}</div></section>
+ <section className="panel"><div className="progress-label"><span>{t("progress")}</span><b>{pct}%</b></div><div className="track"><div style={{width:pct+"%"}}/></div><small>{stage||t("ready")}</small></section>
+ {err&&<div className="error">{t("error")}: {err} <button onClick={()=>E("")}>×</button></div>}
+ <section><h2> {t("title")} <span className="count">{rows.length}</span></h2><div className="table-wrap"><table><thead><tr>{["ip","hostname","mac","vendor","ping","ttl","os","mdns","netbios"].map(k=><th key={k}>{t(k)}</th>)}{cfg.ports.map(p=><th key={p.port}>{p.name.trim()||p.port}</th>)}</tr></thead><tbody>{rows.map(d=><tr key={d.ip}><td className="ip">{d.ip}</td><td>{d.hostname||"—"}</td><td className="mono">{d.mac||"—"}</td><td>{d.vendor||"—"}</td><td>{d.pingMs==null?"—":d.pingMs+" ms"}</td><td>{d.ttl??"—"}</td><td>{d.os||"—"}</td><td>{d.mdns||"—"}</td><td>{d.netbios||"—"}</td>{cfg.ports.map(p=><td key={p.port} className={d.ports?.[p.port]?"open":"closed"}>{d.ports?.[p.port]?"●":"—"}</td>)}</tr>)}{!rows.length&&<tr><td className="empty" colSpan={9+cfg.ports.length}>{t("noDevices")}</td></tr>}</tbody></table></div></section>
+ {about&&<div className="backdrop" onClick={()=>A(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>A(false)}>×</button><div className="mark">IP</div><h2>IP Neighbors</h2><p>{t("aboutText")}</p><dl><dt>{t("version")}</dt><dd>1.0</dd><dt>{t("author")}</dt><dd>chatgpt.com</dd></dl><button onClick={()=>A(false)}>{t("close")}</button></div></div>}
+ </main>
+}
+createRoot(document.getElementById("root")).render(<App/>);
