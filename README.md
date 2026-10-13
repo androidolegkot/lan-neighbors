@@ -1,6 +1,6 @@
 # IP Neighbors
 
-Version 1.0 — a Node.js and React web application for discovering responsive devices on a local IPv4 network.
+A Node.js and React web application for discovering active devices on a local IPv4 network.
 
 ## Features
 
@@ -41,3 +41,7 @@ For UI development, run npm start and npm run dev in separate terminals. Vite li
 - The app supports IPv4 prefixes /16 through /30. Ping timeout is 100–10000 ms. Port entries are limited by practical browser, JSON request, and operating-system resources rather than an application-level port-count setting.
 - ARP scanning may require root or suitable arp-scan capabilities.
 - MAC randomization and unassigned IEEE prefixes may have no manufacturer result.
+
+## Screenshot
+
+![IP Neighbors screenshot](screenshots/ip-neighbors.png)
